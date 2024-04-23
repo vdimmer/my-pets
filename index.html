@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+    <style>
+        body {
+            text-align: center;
+        }
+        #screen {
+            float: left;
+            margin: 10px;
+            border: solid green 15px;
+        }
+        .counter-box {
+            background-color:aquamarine;
+            border-radius: 10px;
+            display: inline-block;
+            width: 15%;
+            margin: 20px;
+        }
+    </style>
+    <h1>SNAKE</h1>
+    <canvas id="screen" width="800" height="600">
+    </canvas>
+    <aside class="control">
+    <div class="counter-box">
+    <h2>Counter:</h2>
+    <h2 id='counter'>0</h2>
+    </div><br>
+    <button onclick="game.loopToggle()">Pause</button>
+    </aside>
+</body>
+<script>
+    "use strict";
+    const SCREENSIZE = [800, 600];
+
+    class Target {
+        constructor() {
+            this.size = 10;
+            this.position = [50,50];
+            this.stepLength = 5;
+        }
+
+        getDirections = () => {
+            let xs = [(this.position[0]-this.stepLength)%SCREENSIZE[0], this.position[0], (this.position[0]+this.stepLength)%SCREENSIZE[0]];
+            let ys = [(this.position[1]-this.stepLength)%SCREENSIZE[1], this.position[1], (this.position[1]+this.stepLength)%SCREENSIZE[1]];
+            let dirs = [];
+            for (let x of xs) {
+                for (let y of ys) {
+                    if ((x+this.size)>SCREENSIZE[0]) x = SCREENSIZE[0]-this.size;
+                    if ((y+this.size)>SCREENSIZE[1]) y = SCREENSIZE[1]-this.size;
+                    if (x<0) x = 0;
+                    if (y<0) y = 0;
+                    if (!(x===this.position[0] && y===this.position[1])) {
+                        dirs.push([x,y]);
+                    }
+                }
+            }
+            return dirs;
+        }
+
+        step = (snake) => {
+            let directions = this.getDirections();
+            let snakeHead = snake.head.slice(0,3);
+            let distances = directions.map((point)=>{return Math.sqrt((point[0]-snakeHead[0])**2+(point[1]-snakeHead[1])**2)});
+            let maxDistIdx = distances.indexOf(Math.max(...distances));
+            let pos = directions[maxDistIdx];
+            this.position = [pos[0]%SCREENSIZE[0], pos[1]%SCREENSIZE[1]];
+        }
+
+        setNewPosition = () => {
+            let x = Math.floor(Math.random()*1000-this.size)%SCREENSIZE[0];
+            let y = Math.floor(Math.random()*1000-this.size)%SCREENSIZE[1];
+            this.position = [x, y];
+        }
+
+        render = (screen) => {
+            screen.fillStyle = "yellow";
+            screen.fillRect(...this.position, this.size, this.size);
+        }
+    }
+
+    class Snake {
+        constructor() {
+            this.blockSize = 20;
+            this.resetPosition();
+        }
+
+        resetPosition = () => {
+            this.body = [[0, 0, this.blockSize, this.blockSize], [this.blockSize, 0, this.blockSize, this.blockSize]];
+            this.head = this.body[0];
+            this.direction = "E"; //N-up W-left E-right S-down
+            this.blockDirUntilNextFrame = false;
+        }
+
+        step = () => {
+            let newHead = this.head.slice(0);
+            switch (this.direction) {
+                case "N":
+                    newHead[1] -= this.blockSize;
+                    break;
+                case "S":
+                    newHead[1] += this.blockSize;
+                    break;
+                case "W":
+                    newHead[0] -= this.blockSize;
+                    break;
+                case "E":
+                    newHead[0] += this.blockSize;
+                    break;
+            }
+            this.body.unshift(newHead);
+            this.head = this.body[0];
+            this.body.pop();
+        }
+
+        changeDirection = (dir) => {
+            const AXIS_V = ["N","S"];
+            const AXIS_H = ["E", "W"];
+            if (((AXIS_V.includes(this.direction) && AXIS_H.includes(dir)) || 
+                (AXIS_H.includes(this.direction) && AXIS_V.includes(dir))) &&
+                !this.blockDirUntilNextFrame) {
+                    this.direction = dir;
+                }
+                this.blockDirUntilNextFrame = true;
+        }
+
+        updateBody = () => {
+            let newBlock = this.body[this.body.length-1].slice();
+                switch (this.direction) {
+                    case "N":
+                        newBlock[1] += this.blockSize;
+                        break;
+                    case "S":
+                        newBlock[1] -= this.blockSize;
+                        break;
+                    case "W":
+                        newBlock[0] += this.blockSize;
+                        break;
+                    case "E":
+                        newBlock[0] -= this.blockSize;
+                        break;
+                }
+                this.body.push(newBlock);
+                //snake.head = snake.body[0]; 
+        }
+
+        render = (screen) => {
+            screen.fillStyle = "red";
+            this.body.forEach((blk)=> {
+                screen.fillRect(...blk);
+            });
+            this.blockDirUntilNextFrame = false;
+        }
+
+
+    }
+
+    class Game {
+        constructor() {
+            this.loopRun = false;
+            this.delay = 250;
+            this.screen = document.getElementById("screen").getContext("2d");
+            this.counter = document.getElementById("counter");
+            addEventListener("keypress",(ev)=>{this.dispatchPressedKey(ev)});
+
+            this.snake = new Snake();
+            this.target = new Target();
+
+            this.redraw();
+        };
+
+        updateCounter = () => {
+            let nextVal = Number(this.counter.textContent)+1;
+            if (this.delay>100 && nextVal%5==0) this.reduceDelay();
+            this.counter.textContent = String(nextVal);
+        }
+
+        reduceDelay = () => {
+            this.delay -= 10;
+            console.log(this.delay);
+            this.stopMainloop();
+            this.runMainloop();
+
+        }
+
+        loopToggle = () => {
+            (this.loopRun) ? this.stopMainloop() : this.runMainloop();
+        }
+
+        runMainloop = () => {
+            this.loopRun = true;
+            this.intervalId = setInterval(this.redraw, this.delay);
+        }
+
+        stopMainloop = () => {
+            this.loopRun = false;
+            clearInterval(this.intervalId);
+        }
+        
+        redraw = () => {
+            this.screen.clearRect(0, 0, SCREENSIZE[0], SCREENSIZE[1]);
+            this.screen.fillStyle = "black";
+            this.screen.fillRect(0, 0, SCREENSIZE[0], SCREENSIZE[1]);
+
+            this.target.step(this.snake);
+            this.snake.step();
+
+            this.checkCollision(this.snake, this.target);
+            this.checkFatalCollision(this.snake);
+
+            this.snake.render(this.screen);
+            this.target.render(this.screen);
+        }
+
+        checkCollision = (snake, target) => {
+            if ((snake.head[0]<=target.position[0] && snake.head[1]<=target.position[1] &&
+                (snake.head[0]+snake.blockSize)>=(target.position[0]+target.size) &&
+                (snake.head[1]+snake.blockSize)>=(target.position[1]+target.size)
+                ) || (snake.head[0]<=target.position[0] && snake.head[1]<=target.position[1] &&
+                (snake.head[0]+snake.blockSize)>=(target.position[0]+target.size) &&
+                (snake.head[1]+snake.blockSize)>=(target.position[1]+target.size)
+                )) {
+                this.updateCounter();
+                this.snake.updateBody();
+                target.setNewPosition();
+                //TODO counter, escaping target, target respawn, speed increasing, customization
+            } 
+        }
+
+        checkFatalCollision = (snake) => { 
+            let strBody = snake.body.slice(1).map((el)=>{return String(el);});
+            let strHead = String(snake.head);
+            if (strBody.includes(strHead) ||
+                snake.head[0]<0 || snake.head[1]<0 || 
+                (snake.head[0]>=800 && snake.direction==="E") || 
+                (snake.head[1]>=600 && snake.direction==="S")) this.gameOver();
+            }
+
+        dispatchPressedKey = (event) => {
+            event.preventDefault();
+            switch (event.key.toLowerCase()) {
+                case " ":
+                    this.loopToggle();
+                    break;
+                case "w":
+                case "ц":
+                    this.snake.changeDirection("N");
+                    break;
+                case "s":
+                case "ы":
+                    this.snake.changeDirection("S");
+                    break;
+                case "a":
+                case "ф":
+                    this.snake.changeDirection("W");
+                    break;
+                case "d":
+                case "в":
+                    this.snake.changeDirection("E");
+                    break;
+            }
+        }
+
+        gameOver = () => {
+            this.loopToggle();
+            this.snake.resetPosition();
+            this.counter.textContent = 0;
+            this.delay = 250;
+            alert("You loose!");
+        }
+    }
+
+    const game = new Game();
+</script>
+</html>
