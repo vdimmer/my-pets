@@ -272,9 +272,9 @@
         gameOver = () => {
             this.loopToggle();
             this.snake.resetPosition();
+            alert(`You loose! Score: ${this.counter.textontent}`);
             this.counter.textContent = 0;
             this.delay = 250;
-            alert("You loose!");
         }
     }
 
