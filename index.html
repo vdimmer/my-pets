@@ -221,13 +221,10 @@
         }
 
         checkCollision = (snake, target) => {
-            if ((snake.head[0]<=target.position[0] && snake.head[1]<=target.position[1] &&
+            if (snake.head[0]<=target.position[0] && snake.head[1]<=target.position[1] &&
                 (snake.head[0]+snake.blockSize)>=(target.position[0]+target.size) &&
                 (snake.head[1]+snake.blockSize)>=(target.position[1]+target.size)
-                ) || (snake.head[0]<=target.position[0] && snake.head[1]<=target.position[1] &&
-                (snake.head[0]+snake.blockSize)>=(target.position[0]+target.size) &&
-                (snake.head[1]+snake.blockSize)>=(target.position[1]+target.size)
-                )) {
+                ) {
                 this.updateCounter();
                 this.snake.updateBody();
                 target.setNewPosition();
