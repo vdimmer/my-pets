@@ -11,15 +11,16 @@
             text-align: center;
         }
         .dateSelector {
-            position: fixed;
-            margin-left: 50%;
+            max-width: 440px;
+            max-height: fit-content;
             background-color: lightgrey;
             border: 15px groove darkred;
             border-radius: 5px;
             font: bolder 0.7rem sans-serif;
+            margin: 5px 29%;
         }
         .dateSelector>* {
-            width: fit-content;
+            min-width: fit-content;
             margin-top: 5px;
             margin-bottom: 5px;
             font: bolder 0.7rem sans-serif;
@@ -27,14 +28,23 @@
         }
         .dateSelector>div>button {
             border-radius: 5px;
-            margin: 10px;
-            padding: 5px;
+            margin: 5px 15px;
             font: bolder 0.7rem sans-serif;
         }
+
+        #container {
+            max-height: 400px;
+            min-width: fit-content;
+            overflow: scroll;
+            margin: 5px 29%;
+            scrollbar-width: none;
+        }
+
         td {
             min-width: 60px;
             border: 3px solid darkred;
             border-radius: 5px;
+            background-color: aliceblue;
         }
 
         td.D1, td.D2 {
@@ -285,8 +295,9 @@
         </div>
         </fieldset>
     </aside>
+    <div id="container">
     <main id="main">
-
     </main>
+    </div>
 </body>
 </html>
